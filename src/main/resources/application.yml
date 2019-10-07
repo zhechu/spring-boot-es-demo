@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: sample-spring-elasticsearch
+  data:
+    elasticsearch:
+      cluster-name: springboot-demo
+      cluster-nodes: 192.168.163.41:9300
+
+  elasticsearch:
+    rest:
+      uris: http://192.168.163.41:9200
+
+initial-import:
+  enabled: true
