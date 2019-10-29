@@ -113,3 +113,115 @@ PUT video
     }
 }
 ```
+
+新建索引 tb_video
+```shell script
+PUT tb_video
+{
+  "mappings": {
+      "doc": {
+        "properties": {
+          "id": {
+            "type": "long"
+          },
+         "videoTitle": {
+           "type": "text",
+           "analyzer": "ik_max_word",
+           "fields": {
+             "keyword": {
+               "type": "keyword",
+               "ignore_above": 256
+             }
+           }
+         },
+          "score": {
+            "type": "long"
+          },
+          "createTime": {
+            "type": "date"
+          },
+          "lastUpdateTime": {
+            "type": "date"
+          }
+        }
+      }
+    },
+    "settings": {
+      "index": {
+        "number_of_shards": "2",
+        "number_of_replicas": "1"
+      },
+      "analysis" : {
+            "analyzer" : {
+                "pinyin_analyzer" : {
+                    "tokenizer" : "whitespace",
+                    "filter" : "pinyin_first_letter_and_full_pinyin_filter"
+                }
+            },
+            "filter" : {
+                "pinyin_first_letter_and_full_pinyin_filter" : {
+                    "type" : "pinyin",
+                    "keep_first_letter" : true,
+                    "keep_full_pinyin" : true,
+                    "keep_none_chinese" : true,
+                    "keep_original" : false,
+                    "limit_first_letter_length" : 32,
+                    "lowercase" : true,
+                    "trim_whitespace" : true,
+                    "keep_none_chinese_in_first_letter" : true
+                }
+            }
+        }
+    }
+}
+```
+
+## logstash
+
+logstash-input-jdbc 插件官方文档
+
+<https://www.elastic.co/guide/en/logstash/current/plugins-inputs-jdbc.html#plugins-inputs-jdbc-options>
+
+安装 jdbc 和 elasticsearch 插件
+```shell script
+$ ./bin/logstash-plugin install --no-verify logstash-input-jdbc
+$ ./bin/logstash-plugin install --no-verify logstash-output-elasticsearch
+```
+
+logstash-input-jdbc 配置
+```shell script
+input {
+  jdbc {
+    jdbc_driver_library => "/usr/share/logstash/mysql-connector-java-5.1.47.jar"
+    jdbc_driver_class => "com.mysql.jdbc.Driver"
+    jdbc_connection_string => "jdbc:mysql://10.113.248.204:3306/qiaoku_video?characterEncoding=utf8&useUnicode=true&useSSL=false&serverTimezone=GMT%2B8"
+    jdbc_user => "root"
+    jdbc_password => "didong1904"
+    schedule => "*/5 * * * * *"
+    lowercase_column_names => false
+    statement => "SELECT id, video_title as videoTitle, score, create_time as createTime, last_update_time as lastUpdateTime FROM tb_video WHERE last_update_time >= :sql_last_value"
+    use_column_value => true
+    tracking_column_type => "timestamp"
+    tracking_column => "lastUpdateTime"
+    last_run_metadata_path => "syncpoint_table"
+  }
+}
+```
+
+logstash-output-elasticsearch 配置
+```shell script
+output {
+  elasticsearch {
+    hosts => ["192.168.163.21"]
+    index => "tb_video"
+    document_id => "%{id}"
+    document_type => "doc"
+  }
+}
+```
+
+启动
+```shell script
+$ ./bin/logstash -f config/sync_table.cfg
+```
+
