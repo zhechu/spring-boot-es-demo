@@ -11,7 +11,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.io.Serializable;
 
-@Document(indexName = Constants.EMPLOYEE_INDEX, type = Constants.EMPLOYEE_INDEX_TYPE)
+@Document(indexName = Constants.EMPLOYEE_INDEX, type = Constants.INDEX_TYPE)
 @Setter
 @Getter
 @ToString
