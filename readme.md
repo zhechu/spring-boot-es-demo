@@ -27,6 +27,11 @@ $ docker run --name es622 -d -p 9200:9200 -p 9300:9300 -e "node.name=node0" -e "
 $ ./bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v6.2.2/elasticsearch-analysis-ik-6.2.2.zip
 ```
 
+安装 Pinyin 分词器
+```shell script
+$ /usr/share/elasticsearch/bin/elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-pinyin/releases/download/v6.2.2/elasticsearch-analysis-pinyin-6.2.2.zip
+```
+
 部署 kibana
 ```shell script
 $ docker run --name kibana_6_2_2 -d --link es622:elasticsearch -p 5601:5601 docker.elastic.co/kibana/kibana:6.2.2
@@ -44,11 +49,16 @@ PUT video
           "address": {
             "type": "text",
             "analyzer": "ik_max_word",
-            "search_analyzer": "ik_max_word",
             "fields": {
               "keyword": {
                 "type": "keyword",
                 "ignore_above": 256
+              },
+              "pinyin": {
+                  "type": "text",
+                  "store": false,
+                  "term_vector": "with_offsets",
+                  "analyzer": "pinyin_analyzer"
               }
             }
           },
@@ -64,7 +74,6 @@ PUT video
           "title": {
             "type": "text",
             "analyzer": "ik_max_word",
-            "search_analyzer": "ik_max_word",
             "fields": {
               "keyword": {
                 "type": "keyword",
@@ -79,7 +88,28 @@ PUT video
       "index": {
         "number_of_shards": "1",
         "number_of_replicas": "1"
-      }
+      },
+      "analysis" : {
+            "analyzer" : {
+                "pinyin_analyzer" : {
+                    "tokenizer" : "whitespace",
+                    "filter" : "pinyin_first_letter_and_full_pinyin_filter"
+                }
+            },
+            "filter" : {
+                "pinyin_first_letter_and_full_pinyin_filter" : {
+                    "type" : "pinyin",
+                    "keep_first_letter" : true,
+                    "keep_full_pinyin" : true,
+                    "keep_none_chinese" : true,
+                    "keep_original" : false,
+                    "limit_first_letter_length" : 32,
+                    "lowercase" : true,
+                    "trim_whitespace" : true,
+                    "keep_none_chinese_in_first_letter" : true
+                }
+            }
+        }
     }
 }
 ```
