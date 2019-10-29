@@ -32,7 +32,7 @@ public class SampleDataSet {
 
     @PostConstruct
     public void init() {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             bulk(i);
         }
     }

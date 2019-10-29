@@ -1,5 +1,6 @@
 package com.wise.demo.services.elasticsearch.controller;
 
+import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.wise.demo.services.elasticsearch.model.Video;
 import com.wise.demo.services.elasticsearch.repository.VideoRepository;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -43,7 +44,7 @@ public class VideoController {
     }
 
     /**
-     * 全文检索，按 _score 降序排序
+     * 全文检索，按 _score 降序排序（兼容繁体字检索，实现：在应用层将繁体字转为简体字）
      * 如：http://localhost:8080/video/address/match?address=石巷&page=1&size=10
      * @param address
      * @param page
@@ -56,6 +57,9 @@ public class VideoController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
 
+        // 繁体字转为简体字
+        address = ZhConverterUtil.convertToSimple(address);
+
         SearchQuery searchQuery = new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.matchQuery("address", address))
                 // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
@@ -65,7 +69,7 @@ public class VideoController {
     }
 
     /**
-     * 全文按拼音检索（使用场景：查询框联想），按 _score 降序排序
+     * 全文按拼音检索，按 _score 降序排序
      * 如：http://localhost:8080/video/address/pinyin?address=kela玛依&page=1&size=10
      * @param address
      * @param page
@@ -82,6 +86,34 @@ public class VideoController {
                 .withQuery(QueryBuilders.matchPhraseQuery("address.pinyin", address))
                 // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
                 .withPageable(PageRequest.of(page - 1, size)).build();
+
+        return template.queryForList(searchQuery, Video.class);
+    }
+
+    /**
+     * 复合检索（整合IK分词检索和拼音检索），按 _score 降序排序
+     * 如：http://localhost:8080/video/address/composite?address=shi巷&page=1&size=100
+     * @param address
+     * @param page
+     * @param size
+     * @return
+     */
+    @GetMapping("/address/composite")
+    public List<Video> findByAddressWithComposite(
+            @RequestParam String address,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+
+        // 繁体字转为简体字
+        address = ZhConverterUtil.convertToSimple(address);
+
+        SearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withQuery(QueryBuilders.functionScoreQuery(QueryBuilders.boolQuery()
+                        .must(QueryBuilders.matchQuery("address",address))
+                        .should(QueryBuilders.matchPhraseQuery("address.pinyin", address))))
+                // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
+                .withPageable(PageRequest.of(page - 1, size))
+                .build();
 
         return template.queryForList(searchQuery, Video.class);
     }
