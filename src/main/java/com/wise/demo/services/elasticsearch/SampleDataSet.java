@@ -34,7 +34,7 @@ public class SampleDataSet {
     @PostConstruct
     public void init() {
         for (int i = 0; i < 20; i++) {
-            bulk(i);
+//            bulk(i);
         }
     }
 
