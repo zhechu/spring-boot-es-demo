@@ -5,10 +5,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.repository.ElasticsearchCrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface TbVideoRepository extends ElasticsearchCrudRepository<TbVideo, Long> {
+
+    List<TbVideo> findByIdIn(Collection<Long> ids);
 
     List<TbVideo> findByVideoTitleLike(String videoTitle, Pageable pageable);
 

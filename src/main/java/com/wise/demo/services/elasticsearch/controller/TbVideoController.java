@@ -35,4 +35,16 @@ public class TbVideoController {
                 PageRequest.of(page - 1, size, Sort.Direction.DESC, "score"));
     }
 
+    /**
+     * 根据ID列表检索
+     * 如：http://localhost:8080/tb_video/ids [129,136]
+     * @param ids
+     * @return
+     */
+    @PostMapping("/ids")
+    public List<TbVideo> findByIdIs(@RequestBody List<Long> ids) {
+        // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
+        return tbVideoRepository.findByIdIn(ids);
+    }
+
 }
