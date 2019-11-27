@@ -1,8 +1,10 @@
 package com.wise.demo.services.elasticsearch.repository;
 
+import com.wise.demo.services.elasticsearch.model.Employee;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.repository.ElasticsearchCrudRepository;
 import org.springframework.stereotype.Repository;
-import com.wise.demo.services.elasticsearch.model.Employee;
 
 import java.util.List;
 
@@ -11,6 +13,6 @@ public interface EmployeeRepository extends ElasticsearchCrudRepository<Employee
 
     List<Employee> findByOrganizationName(String name);
 
-    List<Employee> findByName(String name);
+    Page<Employee> findByNameLike(String name, Pageable pageable);
 
 }
