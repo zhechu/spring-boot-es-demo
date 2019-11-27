@@ -10,8 +10,9 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import java.io.Serializable;
+import java.util.List;
 
-@Document(indexName = Constants.EMPLOYEE_INDEX, type = Constants.INDEX_TYPE)
+@Document(indexName = Constants.EMPLOYEE_INDEX, type = Constants.INDEX_TYPE, createIndex = false)
 @Setter
 @Getter
 @ToString
@@ -26,7 +27,7 @@ public class Employee implements Serializable {
     private Organization organization;
 
     @Field(type = FieldType.Object)
-    private Department department;
+    private List<Department> department;
 
     private String name;
 

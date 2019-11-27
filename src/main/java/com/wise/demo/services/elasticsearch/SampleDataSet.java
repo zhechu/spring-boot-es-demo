@@ -33,8 +33,8 @@ public class SampleDataSet {
 
     @PostConstruct
     public void init() {
-        for (int i = 0; i < 20; i++) {
-//            bulk(i);
+        for (int i = 0; i < 10; i++) {
+            bulk(i);
         }
     }
 
@@ -130,9 +130,13 @@ public class SampleDataSet {
             employee.setName(faker.name().username());
             employee.setAge(r.nextInt(60));
             employee.setPosition(faker.job().position());
-            int departmentId = r.nextInt(5000);
-            employee.setDepartment(new Department((long) departmentId, faker.company().name()));
-            int organizationId = departmentId % 100;
+            int departmentId1 = r.nextInt(5000);
+            int departmentId2 = r.nextInt(5000);
+            List<Department> departmentList = new ArrayList<>();
+            departmentList.add(new Department((long) departmentId1, faker.company().name()));
+            departmentList.add(new Department((long) departmentId2, faker.company().name()));
+            employee.setDepartment(departmentList);
+            int organizationId = departmentId1 % 100;
             employee.setOrganization(new Organization((long) organizationId, "TestO" + organizationId, "Test Street No. " + organizationId));
             employees.add(employee);
         }
