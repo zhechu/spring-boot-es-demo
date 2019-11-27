@@ -13,3 +13,6 @@ spring:
 # 初始化时是否导入数据
 initial-import:
   enabled: true
+
+server:
+  port: 9901

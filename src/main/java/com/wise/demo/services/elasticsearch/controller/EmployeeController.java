@@ -24,8 +24,25 @@ public class EmployeeController {
         return repository.findByName(name);
     }
 
+    @PostMapping("/findByIds")
+    public Iterable<Employee> findByIds(@RequestBody List<Long> ids) {
+        return repository.findAllById(ids);
+    }
+
     @GetMapping("/organization/{organizationName}")
     public List<Employee> findByOrganizationName(@PathVariable("organizationName") String organizationName) {
         return repository.findByOrganizationName(organizationName);
     }
+
+    @DeleteMapping(value = "/{id}")
+    public String delete(@PathVariable Long id) {
+        repository.deleteById(id);
+        return "success";
+    }
+
+    @PutMapping
+    public Employee update(@RequestBody Employee employee) {
+        return repository.save(employee);
+    }
+
 }

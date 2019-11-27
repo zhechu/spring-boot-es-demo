@@ -43,7 +43,6 @@ public class TbVideoController {
      */
     @PostMapping("/ids")
     public List<TbVideo> findByIdIs(@RequestBody List<Long> ids) {
-        // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
         return tbVideoRepository.findByIdIn(ids);
     }
 
