@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.query.AliasQuery;
 import org.springframework.data.elasticsearch.core.query.IndexQuery;
 
 import javax.annotation.PostConstruct;
@@ -41,8 +42,14 @@ public class SampleDataSet {
     public void bulk(int ii) {
         try {
             // check if the index is existed
-            if (!template.indexExists(Constants.EMPLOYEE_ALIAS)) {
-                template.createIndex(Constants.EMPLOYEE_ALIAS);
+            if (!template.indexExists(Constants.EMPLOYEE_INDEX)) {
+                template.createIndex(Constants.EMPLOYEE_INDEX);
+
+                // 设置别名
+                AliasQuery aliasQuery = new AliasQuery();
+                aliasQuery.setIndexName(Constants.EMPLOYEE_INDEX);
+                aliasQuery.setAliasName(Constants.EMPLOYEE_ALIAS);
+                template.addAlias(aliasQuery);
             }
             ObjectMapper mapper = new ObjectMapper();
             List<IndexQuery> queries = new ArrayList<>();
@@ -52,14 +59,14 @@ public class SampleDataSet {
                 indexQuery.setId(employee.getId().toString());
                 indexQuery.setSource(mapper.writeValueAsString(employee));
                 //Set the index name & doc type
-                indexQuery.setIndexName(Constants.EMPLOYEE_ALIAS);
+                indexQuery.setIndexName(Constants.EMPLOYEE_INDEX);
                 indexQuery.setType(Constants.INDEX_TYPE);
                 queries.add(indexQuery);
             }
             if (queries.size() > 0) {
                 template.bulkIndex(queries);
             }
-            template.refresh(Constants.EMPLOYEE_ALIAS);
+            template.refresh(Constants.EMPLOYEE_INDEX);
             LOGGER.info("BulkIndex completed: {}", ii);
         } catch (Exception e) {
             LOGGER.error("Error bulk index", e);
