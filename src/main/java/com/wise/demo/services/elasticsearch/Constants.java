@@ -2,14 +2,16 @@ package com.wise.demo.services.elasticsearch;
 
 public interface Constants {
 
-    public static String EMPLOYEE_INDEX ="employees";
+    String EMPLOYEE_INDEX ="employees";
 
-    public static String VIDEO_INDEX ="video";
+    String EMPLOYEE_ALIAS ="employeesalias";
 
-    public static String TB_VIDEO_INDEX ="tb_video";
+    String VIDEO_INDEX ="video";
 
-    public static String INDEX_DOC_TYPE ="doc";
+    String TB_VIDEO_INDEX ="tb_video";
 
-    public static String INDEX_TYPE ="_doc";
+    String INDEX_DOC_TYPE ="doc";
+
+    String INDEX_TYPE ="_doc";
 
 }

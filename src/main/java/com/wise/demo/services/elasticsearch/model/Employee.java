@@ -12,7 +12,7 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import java.io.Serializable;
 import java.util.List;
 
-@Document(indexName = Constants.EMPLOYEE_INDEX, type = Constants.INDEX_TYPE, createIndex = false)
+@Document(indexName = Constants.EMPLOYEE_ALIAS, type = Constants.INDEX_TYPE, createIndex = false)
 @Setter
 @Getter
 @ToString

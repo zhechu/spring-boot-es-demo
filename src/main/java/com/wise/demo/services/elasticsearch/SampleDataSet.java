@@ -33,7 +33,7 @@ public class SampleDataSet {
 
     @PostConstruct
     public void init() {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 2; i++) {
             bulk(i);
         }
     }
@@ -41,8 +41,8 @@ public class SampleDataSet {
     public void bulk(int ii) {
         try {
             // check if the index is existed
-            if (!template.indexExists(Constants.EMPLOYEE_INDEX)) {
-                template.createIndex(Constants.EMPLOYEE_INDEX);
+            if (!template.indexExists(Constants.EMPLOYEE_ALIAS)) {
+                template.createIndex(Constants.EMPLOYEE_ALIAS);
             }
             ObjectMapper mapper = new ObjectMapper();
             List<IndexQuery> queries = new ArrayList<>();
@@ -52,44 +52,44 @@ public class SampleDataSet {
                 indexQuery.setId(employee.getId().toString());
                 indexQuery.setSource(mapper.writeValueAsString(employee));
                 //Set the index name & doc type
-                indexQuery.setIndexName(Constants.EMPLOYEE_INDEX);
+                indexQuery.setIndexName(Constants.EMPLOYEE_ALIAS);
                 indexQuery.setType(Constants.INDEX_TYPE);
                 queries.add(indexQuery);
             }
             if (queries.size() > 0) {
                 template.bulkIndex(queries);
             }
-            template.refresh(Constants.EMPLOYEE_INDEX);
+            template.refresh(Constants.EMPLOYEE_ALIAS);
             LOGGER.info("BulkIndex completed: {}", ii);
         } catch (Exception e) {
             LOGGER.error("Error bulk index", e);
         }
 
-        try {
-            // check if the index is existed
-            if (!template.indexExists(Constants.VIDEO_INDEX)) {
-                template.createIndex(Constants.VIDEO_INDEX);
-            }
-            ObjectMapper mapper = new ObjectMapper();
-            List<IndexQuery> queries = new ArrayList<>();
-            List<Video> videos = rndVideos();
-            for (Video video : videos) {
-                IndexQuery indexQuery = new IndexQuery();
-                indexQuery.setId(video.getId().toString());
-                indexQuery.setSource(mapper.writeValueAsString(video));
-                //Set the index name & doc type
-                indexQuery.setIndexName(Constants.VIDEO_INDEX);
-                indexQuery.setType(Constants.INDEX_TYPE);
-                queries.add(indexQuery);
-            }
-            if (queries.size() > 0) {
-                template.bulkIndex(queries);
-            }
-            template.refresh(Constants.VIDEO_INDEX);
-            LOGGER.info("BulkIndex video completed: {}", ii);
-        } catch (Exception e) {
-            LOGGER.error("Error bulk video index", e);
-        }
+//        try {
+//            // check if the index is existed
+//            if (!template.indexExists(Constants.VIDEO_INDEX)) {
+//                template.createIndex(Constants.VIDEO_INDEX);
+//            }
+//            ObjectMapper mapper = new ObjectMapper();
+//            List<IndexQuery> queries = new ArrayList<>();
+//            List<Video> videos = rndVideos();
+//            for (Video video : videos) {
+//                IndexQuery indexQuery = new IndexQuery();
+//                indexQuery.setId(video.getId().toString());
+//                indexQuery.setSource(mapper.writeValueAsString(video));
+//                //Set the index name & doc type
+//                indexQuery.setIndexName(Constants.VIDEO_INDEX);
+//                indexQuery.setType(Constants.INDEX_TYPE);
+//                queries.add(indexQuery);
+//            }
+//            if (queries.size() > 0) {
+//                template.bulkIndex(queries);
+//            }
+//            template.refresh(Constants.VIDEO_INDEX);
+//            LOGGER.info("BulkIndex video completed: {}", ii);
+//        } catch (Exception e) {
+//            LOGGER.error("Error bulk video index", e);
+//        }
 
 //        try {
 //            // check if the index is existed
