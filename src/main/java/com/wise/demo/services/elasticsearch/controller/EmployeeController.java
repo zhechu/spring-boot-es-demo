@@ -2,10 +2,15 @@ package com.wise.demo.services.elasticsearch.controller;
 
 import com.wise.demo.services.elasticsearch.model.Employee;
 import com.wise.demo.services.elasticsearch.repository.EmployeeRepository;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.metrics.avg.InternalAvg;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +21,9 @@ public class EmployeeController {
 
     @Autowired
     EmployeeRepository repository;
+
+    @Autowired
+    ElasticsearchTemplate template;
 
     @PostMapping
     public Employee add(@RequestBody Employee employee) {
@@ -56,6 +64,21 @@ public class EmployeeController {
     @PutMapping
     public Employee update(@RequestBody Employee employee) {
         return repository.save(employee);
+    }
+
+    @GetMapping("/ageAvg")
+    public double ageAvg() {
+
+        SearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .addAggregation(AggregationBuilders.avg("avg_age").field("age"))
+                .build();
+
+        double ageAvg = template.query(searchQuery, response -> {
+            InternalAvg avg = (InternalAvg) response.getAggregations().asList().get(0);
+            return avg.getValue();
+        });
+
+        return ageAvg;
     }
 
 }

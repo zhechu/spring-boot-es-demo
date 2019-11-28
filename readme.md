@@ -142,7 +142,10 @@ PUT tb_video
           },
           "lastUpdateTime": {
             "type": "date"
-          }
+          },
+         "gif": {
+           "type": "keyword"
+         }
         }
       }
     },
