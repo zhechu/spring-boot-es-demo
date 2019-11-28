@@ -108,9 +108,10 @@ public class VideoController {
         address = ZhConverterUtil.convertToSimple(address);
 
         SearchQuery searchQuery = new NativeSearchQueryBuilder()
-                .withQuery(QueryBuilders.functionScoreQuery(QueryBuilders.boolQuery()
-                        .must(QueryBuilders.matchQuery("address",address))
-                        .should(QueryBuilders.matchPhraseQuery("address.pinyin", address))))
+                .withQuery(QueryBuilders.functionScoreQuery(
+                        QueryBuilders.boolQuery()
+                                .must(QueryBuilders.matchQuery("address",address)).boost(2)
+                                .should(QueryBuilders.matchPhraseQuery("address.pinyin", address).boost(0.1F))))
                 // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
                 .withPageable(PageRequest.of(page - 1, size))
                 .build();
