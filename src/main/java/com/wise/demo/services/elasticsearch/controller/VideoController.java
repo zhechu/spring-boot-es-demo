@@ -3,7 +3,11 @@ package com.wise.demo.services.elasticsearch.controller;
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
 import com.wise.demo.services.elasticsearch.model.Video;
 import com.wise.demo.services.elasticsearch.repository.VideoRepository;
+import org.elasticsearch.common.lucene.search.function.CombineFunction;
+import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -91,7 +95,7 @@ public class VideoController {
     }
 
     /**
-     * 复合检索（整合IK分词检索和拼音检索），按 _score 降序排序
+     * 复合检索（整合IK分词检索和拼音检索），按 _score 降序排序（新的算分 = ⽼的算分 * log( 1 + factor *投票数 )）
      * 如：http://localhost:8080/video/address/composite?address=shi巷&page=1&size=100
      * @param address
      * @param page
@@ -107,11 +111,92 @@ public class VideoController {
         // 繁体字转为简体字
         address = ZhConverterUtil.convertToSimple(address);
 
+        /*
+        POST /video/_search
+        {
+            "query":{
+                "function_score":{
+                    "query":{
+                        "bool":{
+                           "must": {
+                              "match": {
+                                "address": {
+                                  "query": "江",
+                                  "boost": 2
+                                }
+                              }
+                           },
+                           "should": {
+                              "match_phrase": {
+                                "address.pinyin": {
+                                  "query": "江",
+                                  "boost": 0.1
+                                }
+                              }
+                           }
+                        }
+                    }
+                }
+            }
+        }
+        */
+//        SearchQuery searchQuery = new NativeSearchQueryBuilder()
+//                .withQuery(QueryBuilders.functionScoreQuery(
+//                        QueryBuilders.boolQuery()
+//                                .must(QueryBuilders.matchQuery("address",address)).boost(2)
+//                                .should(QueryBuilders.matchPhraseQuery("address.pinyin", address).boost(0.1F))))
+//                // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
+//                .withPageable(PageRequest.of(page - 1, size))
+//                .build();
+
+
+        /*
+        POST /video/_search
+        {
+            "query":{
+                "function_score":{
+                    "query":{
+                        "bool":{
+                           "must": {
+                              "match": {
+                                "address": {
+                                  "query": "江",
+                                  "boost": 2
+                                }
+                              }
+                           },
+                           "should": {
+                              "match_phrase": {
+                                "address.pinyin": {
+                                  "query": "江",
+                                  "boost": 0.1
+                                }
+                              }
+                           }
+                        }
+                    },
+                    "field_value_factor": {
+                      "field": "score",
+                      "modifier": "log1p" ,
+                      "factor": 0.1
+                    },
+                    "boost_mode": "multiply",
+                    "max_boost": 3
+                }
+            }
+        }
+        */
         SearchQuery searchQuery = new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.functionScoreQuery(
                         QueryBuilders.boolQuery()
                                 .must(QueryBuilders.matchQuery("address",address)).boost(2)
-                                .should(QueryBuilders.matchPhraseQuery("address.pinyin", address).boost(0.1F))))
+                                .should(QueryBuilders.matchPhraseQuery("address.pinyin", address).boost(0.1F)),
+                        new FunctionScoreQueryBuilder.FilterFunctionBuilder[]{
+                                new FunctionScoreQueryBuilder.FilterFunctionBuilder(
+                                        ScoreFunctionBuilders.fieldValueFactorFunction("score")
+                                        .modifier(FieldValueFactorFunction.Modifier.LOG1P).factor(0.1F)
+                                )
+                        }).boostMode(CombineFunction.MULTIPLY).maxBoost(3F))
                 // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
                 .withPageable(PageRequest.of(page - 1, size))
                 .build();
