@@ -1,14 +1,21 @@
 package com.wise.demo.services.elasticsearch.controller;
 
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
+import com.google.common.collect.Lists;
 import com.wise.demo.services.elasticsearch.model.Video;
 import com.wise.demo.services.elasticsearch.repository.VideoRepository;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
+import org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.search.suggest.SuggestBuilder;
+import org.elasticsearch.search.suggest.SuggestBuilders;
+import org.elasticsearch.search.suggest.term.TermSuggestionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -214,20 +221,128 @@ public class VideoController {
      * @return
      */
     @GetMapping("/address/seed")
-    public List<Video> findByAddressWithComposite(
+    public List<Video> findByAddressWithSeed(
             @RequestParam Long seed,
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
 
-        RandomScoreFunctionBuilder randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
-        randomScoreFunctionBuilder.seed(seed);
+        /*
+        POST /video/_search
+        {
+          "query": {
+            "function_score": {
+              "random_score": {
+                "seed": 100
+              }
+            }
+          }
+        }
+        */
         SearchQuery searchQuery = new NativeSearchQueryBuilder()
-                .withQuery(QueryBuilders.functionScoreQuery(randomScoreFunctionBuilder))
+                .withQuery(QueryBuilders.functionScoreQuery(new RandomScoreFunctionBuilder().seed(seed)))
                 // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
                 .withPageable(PageRequest.of(page - 1, size))
                 .build();
 
         return template.queryForList(searchQuery, Video.class);
+    }
+
+    /**
+     * 搜索建议（分词）
+     * 如：http://localhost:8080/video/title/suggest/term?title=factor
+     * @param title
+     * @return
+     */
+    @GetMapping("/title/suggest/term")
+    public List<String> suggestTerm(@RequestParam String title) {
+        List<String> titleSuggestList = Lists.newArrayList();
+
+        /*
+        POST /video/_search
+        {
+          "suggest": {
+            "titleSuggestion": {
+              "text": "factor",
+              "term": {
+                "suggest_mode": "popular",
+                "field": "title",
+                "prefix_length":0
+              }
+            }
+          }
+        }
+        */
+        String suggestionName = "titleSuggestion";
+        SuggestBuilder suggestBuilder = new SuggestBuilder()
+                .addSuggestion(
+                        suggestionName,
+                        SuggestBuilders.termSuggestion("title")
+                                .text(title)
+                                .suggestMode(TermSuggestionBuilder.SuggestMode.POPULAR)
+                                .prefixLength(0));
+        SearchResponse searchResponse = template.suggest(suggestBuilder, Video.class);
+        Suggest suggest = searchResponse.getSuggest();
+        Suggest.Suggestion<? extends Suggest.Suggestion.Entry<? extends Suggest.Suggestion.Entry.Option>> suggestion = suggest.getSuggestion(suggestionName);
+        for (Suggest.Suggestion.Entry entry : suggestion.getEntries()) {
+            List<Suggest.Suggestion.Entry.Option> options = entry.getOptions();
+            for (Suggest.Suggestion.Entry.Option option : options) {
+                Text text = option.getText();
+                if (text != null) {
+                    titleSuggestList.add(text.string());
+                }
+            }
+        }
+
+        return titleSuggestList;
+    }
+
+    /**
+     * 搜索建议（短语）
+     * 如：http://localhost:8080/video/title/suggest/phrase?title=factor
+     * @param title
+     * @return
+     */
+    @GetMapping("/title/suggest/phrase")
+    public List<String> suggestPhrase(@RequestParam String title) {
+        List<String> titleSuggestList = Lists.newArrayList();
+
+        /*
+        POST /video/_search
+        {
+          "suggest": {
+            "titleSuggestion": {
+              "text": "factor",
+              "phrase": {
+                "field": "title",
+                "max_errors": 2,
+                "confidence": 0
+              }
+            }
+          }
+        }
+        */
+        String suggestionName = "titleSuggestion";
+        SuggestBuilder suggestBuilder = new SuggestBuilder()
+                .addSuggestion(
+                        suggestionName,
+                        SuggestBuilders.phraseSuggestion("title")
+                                .text(title)
+                                .maxErrors(2)
+                                .confidence(0));
+        SearchResponse searchResponse = template.suggest(suggestBuilder, Video.class);
+        Suggest suggest = searchResponse.getSuggest();
+        Suggest.Suggestion<? extends Suggest.Suggestion.Entry<? extends Suggest.Suggestion.Entry.Option>> suggestion = suggest.getSuggestion(suggestionName);
+        for (Suggest.Suggestion.Entry entry : suggestion.getEntries()) {
+            List<Suggest.Suggestion.Entry.Option> options = entry.getOptions();
+            for (Suggest.Suggestion.Entry.Option option : options) {
+                Text text = option.getText();
+                if (text != null) {
+                    titleSuggestList.add(text.string());
+                }
+            }
+        }
+
+        return titleSuggestList;
     }
 
 }
