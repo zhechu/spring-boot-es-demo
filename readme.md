@@ -179,6 +179,99 @@ PUT tb_video
 }
 ```
 
+## 在线重建索引
+
+官方文档
+
+<https://www.elastic.co/guide/en/elasticsearch/reference/6.2/docs-reindex.html>
+
+查看索引设置
+```shell script
+GET employees
+```
+
+创建临时索引
+```shell script
+PUT employees_temp
+{
+    "settings": {
+      "index": {
+        "number_of_shards": "1",
+        "number_of_replicas": "1"
+      }
+    }
+}
+```
+
+将数据导入临时索引
+```shell script
+POST _reindex
+{
+  "source": {
+    "index": "employees"
+  },
+  "dest": {
+    "index": "employees_temp"
+  }
+}
+```
+> TIPS：需注意导入后原索引的数据变更，这可能会导致数据丢失。
+
+将原索引的别名设置到临时索引上
+```shell script
+POST /_aliases
+{
+    "actions": [
+        { "remove": { "index": "employees", "alias": "employeesalias" }},
+        { "add":    { "index": "employees_temp", "alias": "employeesalias" }}
+    ]
+}
+```
+
+重新设置原索引
+```shell script
+DELETE employees
+PUT employees
+{
+    "settings": {
+      "index": {
+        "number_of_shards": "1",
+        "number_of_replicas": "1"
+      }
+    }
+}
+```
+
+将临时索引的数据导入原索引
+```shell script
+POST _reindex
+{
+  "source": {
+    "index": "employees_temp"
+  },
+  "dest": {
+    "index": "employees"
+  }
+}
+```
+> TIPS：需注意导入后临时索引的数据变更，这可能会导致数据丢失。
+
+将临时索引的别名设置到原索引上
+```shell script
+POST /_aliases
+{
+    "actions": [
+        { "remove": { "index": "employees_temp", "alias": "employeesalias" }},
+        { "add":    { "index": "employees", "alias": "employeesalias" }}
+    ]
+}
+```
+
+删除临时索引
+```shell script
+DELETE employees_temp
+```
+
 ## logstash
 
 logstash-input-jdbc 插件官方文档
