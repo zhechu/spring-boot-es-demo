@@ -7,6 +7,7 @@ import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -197,6 +198,31 @@ public class VideoController {
                                         .modifier(FieldValueFactorFunction.Modifier.LOG1P).factor(0.1F)
                                 )
                         }).boostMode(CombineFunction.MULTIPLY).maxBoost(3F))
+                // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
+                .withPageable(PageRequest.of(page - 1, size))
+                .build();
+
+        return template.queryForList(searchQuery, Video.class);
+    }
+
+    /**
+     * 一致性随机检索（提高视频展现率）
+     * 如：http://localhost:8080/video/address/seed?seed=10000&page=1&size=100
+     * @param seed
+     * @param page
+     * @param size
+     * @return
+     */
+    @GetMapping("/address/seed")
+    public List<Video> findByAddressWithComposite(
+            @RequestParam Long seed,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+
+        RandomScoreFunctionBuilder randomScoreFunctionBuilder = new RandomScoreFunctionBuilder();
+        randomScoreFunctionBuilder.seed(seed);
+        SearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withQuery(QueryBuilders.functionScoreQuery(randomScoreFunctionBuilder))
                 // 页码从 0 开始，表示第一页，为了方便，前端传参统一使用从 1 开始，所以这里页码要减 1
                 .withPageable(PageRequest.of(page - 1, size))
                 .build();
