@@ -1,7 +1,7 @@
 package com.wise.demo.services.elasticsearch.controller;
 
 import com.github.houbb.opencc4j.util.ZhConverterUtil;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.wise.demo.services.elasticsearch.model.Video;
 import com.wise.demo.services.elasticsearch.repository.VideoRepository;
 import org.elasticsearch.action.search.SearchResponse;
@@ -25,6 +25,7 @@ import org.springframework.data.elasticsearch.core.query.SearchQuery;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/video")
@@ -254,8 +255,8 @@ public class VideoController {
      * @return
      */
     @GetMapping("/title/suggest/term")
-    public List<String> suggestTerm(@RequestParam String title) {
-        List<String> titleSuggestList = Lists.newArrayList();
+    public Set<String> suggestTerm(@RequestParam String title) {
+        Set<String> titleSuggestSet = Sets.newHashSet();
 
         /*
         POST /video/_search
@@ -282,18 +283,10 @@ public class VideoController {
                                 .prefixLength(0));
         SearchResponse searchResponse = template.suggest(suggestBuilder, Video.class);
         Suggest suggest = searchResponse.getSuggest();
-        Suggest.Suggestion<? extends Suggest.Suggestion.Entry<? extends Suggest.Suggestion.Entry.Option>> suggestion = suggest.getSuggestion(suggestionName);
-        for (Suggest.Suggestion.Entry entry : suggestion.getEntries()) {
-            List<Suggest.Suggestion.Entry.Option> options = entry.getOptions();
-            for (Suggest.Suggestion.Entry.Option option : options) {
-                Text text = option.getText();
-                if (text != null) {
-                    titleSuggestList.add(text.string());
-                }
-            }
-        }
 
-        return titleSuggestList;
+        titleSuggestSet.addAll(getSuggestSet(suggest, suggestionName));
+
+        return titleSuggestSet;
     }
 
     /**
@@ -303,8 +296,8 @@ public class VideoController {
      * @return
      */
     @GetMapping("/title/suggest/phrase")
-    public List<String> suggestPhrase(@RequestParam String title) {
-        List<String> titleSuggestList = Lists.newArrayList();
+    public Set<String> suggestPhrase(@RequestParam String title) {
+        Set<String> titleSuggestSet = Sets.newHashSet();
 
         /*
         POST /video/_search
@@ -331,18 +324,94 @@ public class VideoController {
                                 .confidence(0));
         SearchResponse searchResponse = template.suggest(suggestBuilder, Video.class);
         Suggest suggest = searchResponse.getSuggest();
-        Suggest.Suggestion<? extends Suggest.Suggestion.Entry<? extends Suggest.Suggestion.Entry.Option>> suggestion = suggest.getSuggestion(suggestionName);
+
+        titleSuggestSet.addAll(getSuggestSet(suggest, suggestionName));
+
+        return titleSuggestSet;
+    }
+
+    /**
+     * 搜索建议（分词和短语组合）
+     * 如：http://localhost:8080/video/title/suggest/composite?title=factor
+     * @param title
+     * @return
+     */
+    @GetMapping("/title/suggest/composite")
+    public Set<String> suggestComposite(@RequestParam String title) {
+        Set<String> titleSuggestSet = Sets.newHashSet();
+
+        /*
+        POST /video/_search
+        {
+          "suggest": {
+            "titleTermSuggestion": {
+              "text": "factor",
+              "term": {
+                "suggest_mode": "popular",
+                "field": "title",
+                "prefix_length":0
+              }
+            },
+            "titlePhraseSuggestion": {
+              "text": "factor",
+              "phrase": {
+                "field": "title",
+                "max_errors": 2,
+                "confidence": 0
+              }
+            }
+          }
+        }
+        */
+
+        String suggestionTremName = "titleTermSuggestion";
+        String suggestionPhraseName = "titlePhraseSuggestion";
+        SuggestBuilder suggestBuilder = new SuggestBuilder()
+                .addSuggestion(
+                        suggestionTremName,
+                        SuggestBuilders.termSuggestion("title")
+                                .text(title)
+                                .suggestMode(TermSuggestionBuilder.SuggestMode.POPULAR)
+                                .prefixLength(0))
+                .addSuggestion(
+                        suggestionPhraseName,
+                        SuggestBuilders.phraseSuggestion("title")
+                                .text(title)
+                                .maxErrors(2)
+                                .confidence(0));
+        SearchResponse searchResponse = template.suggest(suggestBuilder, Video.class);
+        Suggest suggest = searchResponse.getSuggest();
+
+        titleSuggestSet.addAll(getSuggestSet(suggest, suggestionTremName));
+        titleSuggestSet.addAll(getSuggestSet(suggest, suggestionPhraseName));
+
+        return titleSuggestSet;
+    }
+
+    /**
+     * 获取建议
+     *
+     * @param suggest
+     * @param suggestionTremName
+     * @return java.util.Set<java.lang.String>
+     * @author lingyuwang
+     * @date 2019/11/29 19:46
+     */
+    private Set<String> getSuggestSet(Suggest suggest, String suggestionTremName) {
+        Set<String> titleSuggestSet = Sets.newHashSet();
+
+        Suggest.Suggestion<? extends Suggest.Suggestion.Entry<? extends Suggest.Suggestion.Entry.Option>> suggestion = suggest.getSuggestion(suggestionTremName);
         for (Suggest.Suggestion.Entry entry : suggestion.getEntries()) {
             List<Suggest.Suggestion.Entry.Option> options = entry.getOptions();
             for (Suggest.Suggestion.Entry.Option option : options) {
                 Text text = option.getText();
                 if (text != null) {
-                    titleSuggestList.add(text.string());
+                    titleSuggestSet.add(text.string());
                 }
             }
         }
 
-        return titleSuggestList;
+        return titleSuggestSet;
     }
 
 }
