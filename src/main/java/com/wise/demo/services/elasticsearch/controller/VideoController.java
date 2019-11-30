@@ -39,7 +39,7 @@ public class VideoController {
 
     /**
      * 模糊查询，按视频 score 降序排序
-     * 如：http://localhost:8080/video/title/Designer?page=1&size=10
+     * 如：http://localhost:9901/video/title/Designer?page=1&size=10
      * @param title
      * @param page
      * @param size
@@ -58,7 +58,7 @@ public class VideoController {
 
     /**
      * 全文检索，按 _score 降序排序（兼容繁体字检索，实现：在应用层将繁体字转为简体字）
-     * 如：http://localhost:8080/video/address/match?address=石巷&page=1&size=10
+     * 如：http://localhost:9901/video/address/match?address=石巷&page=1&size=10
      * @param address
      * @param page
      * @param size
@@ -83,7 +83,7 @@ public class VideoController {
 
     /**
      * 全文按拼音检索，按 _score 降序排序
-     * 如：http://localhost:8080/video/address/pinyin?address=kela玛依&page=1&size=10
+     * 如：http://localhost:9901/video/address/pinyin?address=kela玛依&page=1&size=10
      * @param address
      * @param page
      * @param size
@@ -105,7 +105,7 @@ public class VideoController {
 
     /**
      * 复合检索（整合IK分词检索和拼音检索），按 _score 降序排序（新的算分 = ⽼的算分 * log( 1 + factor *投票数 )）
-     * 如：http://localhost:8080/video/address/composite?address=shi巷&page=1&size=100
+     * 如：http://localhost:9901/video/address/composite?address=shi巷&page=1&size=100
      * @param address
      * @param page
      * @param size
@@ -215,7 +215,7 @@ public class VideoController {
 
     /**
      * 一致性随机检索（提高视频展现率）
-     * 如：http://localhost:8080/video/address/seed?seed=10000&page=1&size=100
+     * 如：http://localhost:9901/video/address/seed?seed=10000&page=1&size=100
      * @param seed
      * @param page
      * @param size
@@ -250,7 +250,7 @@ public class VideoController {
 
     /**
      * 搜索建议（分词）
-     * 如：http://localhost:8080/video/title/suggest/term?title=factor
+     * 如：http://localhost:9901/video/title/suggest/term?title=factor
      * @param title
      * @return
      */
@@ -291,7 +291,7 @@ public class VideoController {
 
     /**
      * 搜索建议（短语）
-     * 如：http://localhost:8080/video/title/suggest/phrase?title=factor
+     * 如：http://localhost:9901/video/title/suggest/phrase?title=factor
      * @param title
      * @return
      */
@@ -332,7 +332,7 @@ public class VideoController {
 
     /**
      * 搜索建议（分词和短语组合）
-     * 如：http://localhost:8080/video/title/suggest/composite?title=factor
+     * 如：http://localhost:9901/video/title/suggest/composite?title=factor
      * @param title
      * @return
      */

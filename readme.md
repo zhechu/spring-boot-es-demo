@@ -244,7 +244,7 @@ PUT employees
 
 将临时索引的数据导入原索引
 ```shell script
-POST _reindex
+POST _reindex?refresh
 {
   "source": {
     "index": "employees_temp"
