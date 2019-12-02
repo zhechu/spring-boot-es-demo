@@ -272,6 +272,8 @@ POST /_aliases
 DELETE employees_temp
 ```
 
+> TIPS：为字段新增⼦字段、字段更换分词器器或更新分词器器词库可以使用`Update By Query`。
+
 ## logstash
 
 logstash-input-jdbc 插件官方文档

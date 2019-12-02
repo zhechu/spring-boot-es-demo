@@ -106,6 +106,19 @@ public class EmployeeController {
     @GetMapping("/ageAvg")
     public double ageAvg() {
 
+        /*
+        POST employees/_search
+        {
+          "size": 0,
+          "aggs": {
+            "avg_age": {
+              "avg": {
+                "field": "age"
+              }
+            }
+          }
+        }
+        */
         SearchQuery searchQuery = new NativeSearchQueryBuilder()
                 .addAggregation(AggregationBuilders.avg("avg_age").field("age"))
                 .build();
